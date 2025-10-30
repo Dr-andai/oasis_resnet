@@ -10,13 +10,21 @@ class BasicBlock3D(nn.Module):
     expansion = 1
 
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
-        super(BasicBlock3D, self).__init__()
-        self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        super().__init__()
+        self.conv1 = nn.Conv3d(in_channels,
+                               out_channels,
+                               kernel_size=3,
+                               stride=stride,
+                               padding=1, 
+                               bias=False)
         self.bn1 = nn.BatchNorm3d(out_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv3d(out_channels, 
+                               out_channels,
+                               kernel_size=3,
+                               stride=1,
+                               padding=1,
+                               bias=False)
         self.bn2 = nn.BatchNorm3d(out_channels)
         self.downsample = downsample
 
@@ -38,7 +46,7 @@ class BasicBlock3D(nn.Module):
 # ---------------------------
 class ResNet3D(nn.Module):
     def __init__(self, block, layers, num_classes=1, in_channels=1):
-        super(ResNet3D, self).__init__()
+        super().__init__()
 
         # Track channels (important for later layers)
         self.in_channels = 64
@@ -61,8 +69,6 @@ class ResNet3D(nn.Module):
 
     def _make_layer(self, block, out_channels, blocks, stride=1):
         downsample = None
-        in_channels = self.in_channels
-
         if stride != 1 or self.in_channels != out_channels * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv3d(self.in_channels, out_channels * block.expansion,
@@ -70,31 +76,63 @@ class ResNet3D(nn.Module):
                 nn.BatchNorm3d(out_channels * block.expansion),
             )
 
-        layers = []
-        layers.append(block(self.in_channels, out_channels, stride, downsample))
+        layers = [block(self.in_channels, out_channels, stride, downsample)]
         self.in_channels = out_channels * block.expansion
         for _ in range(1, blocks):
             layers.append(block(self.in_channels, out_channels))
 
         return nn.Sequential(*layers)
-
-    def forward(self, x):
-        # Input: [B, C, D, H, W]
+    
+    def extract_features(self, x):
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.maxpool(x)
-
-        x = self.layer1(x)   # 64
-        x = self.layer2(x)   # 128
-        x = self.layer3(x)   # 256
-        x = self.layer4(x)   # 512
+        
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        x = self.fc(x)
+
+    # def forward(self, x):
+    #     # Input: [B, C, D, H, W]
+    #     x = self.relu(self.bn1(self.conv1(x)))
+    #     x = self.maxpool(x)
+
+    #     x = self.layer1(x)   # 64
+    #     x = self.layer2(x)   # 128
+    #     x = self.layer3(x)   # 256
+    #     x = self.layer4(x)   # 512
+
+    #     x = self.avgpool(x)
+    #     x = torch.flatten(x, 1)
+    #     x = self.fc(x)
         return x
 
 
-def resnet18_3d(num_classes=1, in_channels=1):
-    model = ResNet3D(BasicBlock3D, [2, 2, 2, 2], num_classes=num_classes, in_channels=in_channels)
-    model.in_channels = 64  # initial conv1 output channels
-    return model
+def resnet18_3d(in_channels=1):
+    return ResNet3D(BasicBlock3D, [2, 2, 2, 2],in_channels=in_channels)
+
+class MRI_AgeModel(nn.Module):
+    def __init__(self, backbone=None):
+        super().__init__()
+
+        self.backbone = backbone or resnet18_3d(in_channels=1)
+
+        # 512 features from CNN + 1 diagnosis scalar
+        self.fc_age = nn.Sequential(
+            nn.Linear(512 + 1, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
+        )
+
+    def forward(self, volume, diagnosis):
+        feats = self.backbone.extract_features(volume)  # [B,512]
+        diagnosis = diagnosis.float().unsqueeze(1)      # [B,1]
+
+        combined = torch.cat([feats, diagnosis], dim=1) # [B,513]
+        age_pred = self.fc_age(combined)                # [B,1]
+        return age_pred
