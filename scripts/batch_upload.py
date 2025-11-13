@@ -1,8 +1,8 @@
 import modal
 from pathlib import Path
 
-app = modal.App("andaidavid8")
-vol = modal.Volume.from_name("oasis-storage")
+app = modal.App("oasis-resnet")
+vol = modal.Volume.from_name("oasis-storage", environment_name="brain-age")
 
 oasis_png = Path("../data/oasis_png_per_volume/")
 splits = Path("../data/splits/")
@@ -15,4 +15,4 @@ def main():
     with vol.batch_upload() as batch:
         batch.put_directory(str(oasis_png), remote_dir)
         batch.put_directory(str(splits), remote_dir_splits)
-    print("✅ Upload completed!")
+    print("Upload completed!")
