@@ -6,15 +6,14 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-# ---- Adjust these paths if your repo layout differs ----
-ROOT = Path(__file__).resolve().parent
-CHECKPOINT = ROOT.parent / "train" / "checkpoints" / "best.pt"   # adjust filename if needed
-TEST_CSV = ROOT.parent / "data" / "splits" / "test.csv"      # path to test CSV
-OUT_CSV = ROOT.parent / "data" / "inference_results.csv"    # where aggregated results will be saved
-ROOT_DATA_DIR = "../data/oasis_png_per_volume"  # if running locally change to your local path, e.g. "../data/oasis_png_per_volume"
 
-# ---- Imports that depend on project layout ----
-sys.path.append(str(ROOT.parent))  # make project root importable
+ROOT = Path(__file__).resolve().parent
+CHECKPOINT = ROOT.parent / "checkpoints" / "checkpoints" / "best_model.pt" 
+TEST_CSV = ROOT.parent / "data" / "splits" / "test.csv"
+OUT_CSV = ROOT.parent / "data" / "inference_results_2.csv"
+ROOT_DATA_DIR = "../data/oasis_png_per_volume" 
+
+sys.path.append(str(ROOT.parent))
 from model.resnet import MRI_AgeModel, resnet18_3d
 from datasets.mri_datasets import MRISessionDataset
 
@@ -22,7 +21,7 @@ from datasets.mri_datasets import MRISessionDataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
 
-# ---- Load model ----
+# Load model
 model = MRI_AgeModel(resnet18_3d()).to(device)
 if not CHECKPOINT.exists():
     raise FileNotFoundError(f"Checkpoint not found at {CHECKPOINT}")
@@ -33,20 +32,17 @@ if isinstance(state, dict) and not any(k.startswith("_") for k in state.keys()):
     # probably a state_dict
     model.load_state_dict(state)
 else:
-    # saved full model object, replace
     model = state.to(device)
 model.eval()
 
-# ---- Load test CSV and dataset ----
+# Ttest CSV and dataset ----
 test_df = pd.read_csv(TEST_CSV)
-# If your CSV 'path' column already points relative to the oasis folder,
-# ensure we pass correct root_dir to the dataset.
-# Use ROOT_DATA_DIR pointing to the folder that contains the session folders.
+
 test_dataset = MRISessionDataset(test_df, root_dir=ROOT_DATA_DIR)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
 
 
-# ---- Run inference ----
+# Inference ----
 session_ids = []
 participant_ids = []
 true_ages = []

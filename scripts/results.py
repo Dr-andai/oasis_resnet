@@ -6,7 +6,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 # ---------------------------------------------------
 # Load your results
 
-df = pd.read_csv("../data/inference_results.csv")
+df = pd.read_csv("../data/inference_results_2.csv")
 true_ages = df['age'].values
 predicted_ages = df['predicted_age'].values
 
