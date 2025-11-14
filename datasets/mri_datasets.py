@@ -15,7 +15,10 @@ class MRISessionDataset(Dataset):
     
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
-        scan_path = self.root_dir / row["path"]
+        rel_path = row["path"].replace("\\", "/")
+
+        scan_path = self.root_dir / rel_path
+        scan_path = Path(scan_path)
 
         age = torch.tensor(row["age"], dtype=torch.float32)
         diagnosis = torch.tensor(row["diagnosis"], dtype=torch.float32)
@@ -38,8 +41,4 @@ class MRISessionDataset(Dataset):
         if self.transform:
             volume = self.transform(volume)
 
-        return {
-            "volume":volume, 
-            "age" : age,
-            "diagnosis" : diagnosis
-            }
+        return volume, age, diagnosis

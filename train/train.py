@@ -133,7 +133,7 @@ def train():
         "Val MAE": val_maes
     })
     df.to_csv("metrics.csv", index=False)
-    print("✅ Metrics saved to metrics.csv")
+    print("Metrics saved to metrics.csv")
 
     # save final model
     torch.save(model.state_dict(), "../checkpoints/final_model.pt")

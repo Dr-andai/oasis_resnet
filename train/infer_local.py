@@ -94,5 +94,5 @@ results_grouped = (
 # ---- Save outputs ----
 OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 results_grouped.to_csv(OUT_CSV, index=False)
-print(f"✅ Saved averaged inference results to {OUT_CSV}")
+print(f"Saved averaged inference results to {OUT_CSV}")
 print(results_grouped.head())
