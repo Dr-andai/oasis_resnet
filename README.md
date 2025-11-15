@@ -13,11 +13,25 @@ This set of MR images was from a longitudinal collection of 150 subjects aged 60
 Another 14 subjects were characterized as nondemented at the time of their initial visit and were subsequently characterized as demented at a later visit.
 
 # Project Overview
-Input: T1-weighted MRI scans (.nii or preprocessed 3D tensors)  
+Input data: T1-weighted MRI scans (.nii or preprocessed 3D tensors)  
+*Obtain data from above link* Preprocess data per participant  
+data_build.py and data_split.py files prepare the data for training  
+
 Model: Custom 3D ResNet-18 architecture  
+Model details available at model.resnet.py  
+A basic block, resnet layer, then combining the two  
+An additional MRI_AgeModel to add diagnosis  
+
+Model training on Modal, H100 GPUs  
+![Training and Validation Loss](image.png)
+
 Output: Continuous age prediction  
 Evaluation Metrics:  
-- Mean Absolute Error (MAE)
+- Mean Absolute Error (MAE)  
 - Root Mean Squared Error (RMSE)
 - Correlation between True Age and Predicted Age
 - Brain-Age Gap distribution
+
+![BAG Distribution](image-1.png)
+![True Age vs Predicted Age](image-2.png)
+![Absolute error vs True Age](image-3.png)

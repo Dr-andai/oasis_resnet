@@ -5,26 +5,20 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from model.resnet import MRI_AgeModel, resnet18_3d
+from datasets.mri_datasets import MRISessionDataset
 
-
+### Setting up files paths
 ROOT = Path(__file__).resolve().parent
 CHECKPOINT = ROOT.parent / "checkpoints" / "checkpoints" / "best_model.pt" 
 TEST_CSV = ROOT.parent / "data" / "splits" / "test.csv"
 OUT_CSV = ROOT.parent / "data" / "inference_results_2.csv"
 ROOT_DATA_DIR = "../data/oasis_png_per_volume" 
-
 sys.path.append(str(ROOT.parent))
-from model.resnet import MRI_AgeModel, resnet18_3d
-from datasets.mri_datasets import MRISessionDataset
 
-# ---- Device ----
+### Setting up device, model and its weight/state (checkpoint)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Device:", device)
-
-# Load model
 model = MRI_AgeModel(resnet18_3d()).to(device)
-if not CHECKPOINT.exists():
-    raise FileNotFoundError(f"Checkpoint not found at {CHECKPOINT}")
 state = torch.load(CHECKPOINT, map_location=device)
 
 # Support both state_dict and full-model saves
@@ -35,14 +29,14 @@ else:
     model = state.to(device)
 model.eval()
 
-# Ttest CSV and dataset ----
+# Test CSV
 test_df = pd.read_csv(TEST_CSV)
 
 test_dataset = MRISessionDataset(test_df, root_dir=ROOT_DATA_DIR)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
 
 
-# Inference ----
+#### Inference process
 session_ids = []
 participant_ids = []
 true_ages = []
@@ -70,7 +64,7 @@ with torch.no_grad():
         true_ages.append(float(age.cpu().numpy().ravel()[0]))
         predictions.append(float(out_cpu.ravel()[0]))
 
-# ---- Build results dataframe (session-level) ----
+#Builuing the dataframe
 session_df = pd.DataFrame({
     "participant_id": participant_ids,
     "session_id": session_ids,
@@ -78,7 +72,7 @@ session_df = pd.DataFrame({
     "predicted_age": predictions
 })
 
-# ---- Aggregate per participant (mean prediction) ----
+# Mean prediction
 results_grouped = (
     session_df.groupby("participant_id", as_index=False)
     .agg({
@@ -87,7 +81,7 @@ results_grouped = (
     })
 )
 
-# ---- Save outputs ----
+# Saving outputs for plotting later
 OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 results_grouped.to_csv(OUT_CSV, index=False)
 print(f"Saved averaged inference results to {OUT_CSV}")

@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT))
 
+## training on modal for GPU access
 import modal
 from modal import Image, Volume
 import torch
