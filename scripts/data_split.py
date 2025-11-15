@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 def split_dataset(session_csv, out_dir):
     df = pd.read_csv("../data/splits/sessions.csv")
 
-    # set subjects in a unique list
+    # subjects in a unique list
     subjects = df["participant_id"].unique()
 
     # subject level split
