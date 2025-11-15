@@ -18,8 +18,8 @@ from datasets.mri_datasets import MRISessionDataset
 from model.resnet import resnet18_3d
 
 # --- Modal setup ---
-app = modal.App("oasis-training")
-
+app = modal.App("andaidavid8")
+vol = modal.Volume.from_name("oasis-storage")
 image = (
     Image.debian_slim()
     .pip_install("torch", "torchvision", "tqdm", "pandas", "scikit-learn")
@@ -133,7 +133,7 @@ def train():
         "Val MAE": val_maes
     })
     df.to_csv("metrics.csv", index=False)
-    print("✅ Metrics saved to metrics.csv")
+    print("Metrics saved to metrics.csv")
 
     # save final model
     torch.save(model.state_dict(), "../checkpoints/final_model.pt")

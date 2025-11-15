@@ -12,7 +12,7 @@ ROOT = Path("../data/oasis_png_per_volume")
 OUT = Path("../data/splits/sessions.csv")
 DEMOGRAPHICS = Path("../data/oasis_label.csv")
 
-# Load demographics into memory once
+# Loading demographics into memory once
 demo_df = pd.read_csv(DEMOGRAPHICS)
 demo_df.columns = demo_df.columns.str.lower()
 demo_df["subject id"] = demo_df["subject id"].str.strip()
